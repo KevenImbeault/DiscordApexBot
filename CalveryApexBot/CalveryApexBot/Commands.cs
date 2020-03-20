@@ -11,6 +11,7 @@ using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.CommandsNext.Converters;
 using DSharpPlus.Entities;
 using DSharpPlus.Interactivity;
+using Newtonsoft.Json.Linq;
 using RestSharp;
 using RestSharp.Authenticators;
 
@@ -91,8 +92,8 @@ namespace CalveryApexBot
                 tcs.SetException(ex);
             }
 
-            var userData = await tcs.Task;
-
+            var userData = JObject.Parse(await tcs.Task);
+            Console.WriteLine(userData["data"]["segments"][0]["stats"]["rankScore"]["value"]);
         }
     }
 }
