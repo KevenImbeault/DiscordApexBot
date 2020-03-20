@@ -43,6 +43,7 @@ namespace CalveryApexBot
                 Thread.Sleep(500);
             }
 
+            //Waits for a reaction on the sent message and, when getting one, verifies the emoji is part of the emojis array
             var userReaction = await interactivity.WaitForReactionAsync(xe => Array.Exists(emojis, x => x == xe), ctx.User, TimeSpan.FromMinutes(1));          
             
             if(userReaction != null)
@@ -71,8 +72,9 @@ namespace CalveryApexBot
 
             try
             {
+                //Creates request to execute later
                 RestRequest request = new RestRequest($"{platform}/{username}", Method.GET);
-                request.AddHeader("TRN-Api-Key", "76ce319e-45b9-4876-9193-7756bfcf609c");
+                request.AddHeader("TRN-Api-Key", Environment.GetEnvironmentVariable("TRN-Api-Key"));
                 request.RequestFormat = DataFormat.Json;
 
                 client.GetAsync(request, (response, handle) =>
@@ -92,8 +94,12 @@ namespace CalveryApexBot
                 tcs.SetException(ex);
             }
 
-            var userData = JObject.Parse(await tcs.Task);
-            Console.WriteLine(userData["data"]["segments"][0]["stats"]["rankScore"]["value"]);
+            //Transform data ranceived into better formated JSON object
+            var userData = JObject.Parse(await tcs.Task); 
+            //Get the user rank score from the data received
+            var userRankScore = userData["data"]["segments"][0]["stats"]["rankScore"]["value"];
+
+            await ctx.RespondAsync("What is your current rank score ?");
         }
     }
 }
