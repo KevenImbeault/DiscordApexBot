@@ -209,24 +209,26 @@ namespace CalveryApexBot
             await ctx.RespondAsync($"What is your current rank score {ctx.User.Mention} ?");
 
             var userResponse = await interactivity.WaitForMessageAsync(msg => msg.Content.Contains(userRankScore.ToString()));
-
-            var command = connection.CreateCommand();
-            command.CommandText =
-                @"
+            if (userResponse != null)
+            {
+                var command = connection.CreateCommand();
+                command.CommandText =
+                    @"
                     INSERT INTO users (discord_userId, apex_platform, apex_username, apex_rank) 
                     VALUES ($discord_userId, $apex_platform, $apex_username, $apex_rank); 
                  ";
-            command.Parameters.AddWithValue("$discord_userId", ctx.Member.Id);
-            command.Parameters.AddWithValue("$apex_platform", platform);
-            command.Parameters.AddWithValue("$apex_username", username);
-            command.Parameters.AddWithValue("$apex_rank", "");
+                command.Parameters.AddWithValue("$discord_userId", ctx.Member.Id);
+                command.Parameters.AddWithValue("$apex_platform", platform);
+                command.Parameters.AddWithValue("$apex_username", username);
+                command.Parameters.AddWithValue("$apex_rank", "");
 
-            await command.ExecuteNonQueryAsync();
+                await command.ExecuteNonQueryAsync();
 
-            if (userResponse != null)
-            {
                 await ctx.Member.GrantRoleAsync(ctx.Guild.GetRole(690570494348492841));
                 await ctx.RespondAsync($"Perfect ! You are now verified {ctx.User.Mention}!");
+            } else
+            {
+                await ctx.RespondAsync($"The rank score you entered was not correct {ctx.User.Mention} !\n" + "Please try the command again.");
             }
 
             await connection.CloseAsync();
