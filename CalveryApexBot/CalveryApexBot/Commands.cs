@@ -8,6 +8,7 @@ using DSharpPlus.Interactivity;
 using Microsoft.Data.Sqlite;
 using Newtonsoft.Json.Linq;
 using RestSharp;
+using System.Collections.Generic;
 
 namespace CalveryApexBot
 {
@@ -16,6 +17,23 @@ namespace CalveryApexBot
 
         private RestClient client = new RestClient("https://public-api.tracker.gg/v2/apex/standard/profile/");
         private SqliteConnection connection = new SqliteConnection($"Data Source={Environment.GetEnvironmentVariable("SQLITE_DB", EnvironmentVariableTarget.User)}");
+        private Dictionary<string, ulong> RoleIds = new Dictionary<string, ulong>()
+        {
+            {"Masters of the discord", 690225863332986919},
+            {"Staff Team", 690680228489461779},
+            {"Developer", 690344137421357156},
+            {"Apex Predator", 690323104630964254},
+            {"Master", 690323080437956609},
+            {"Diamond", 690322950188171344},
+            {"Platinum", 690232097452982402},
+            {"Gold", 690322910920966305},
+            {"Silver", 690322860371476561},
+            {"Bronze", 690322821078974504},
+            {"Verified", 690570494348492841},
+            {"Xbox", 690324076358795303},
+            {"Playstation", 690324156885237833},
+            {"Origin", 690324115797573663}
+        };
 
         [Command("rank")]
         public async Task Rank(CommandContext ctx)
@@ -157,7 +175,7 @@ namespace CalveryApexBot
                     return;
                 }
 
-                if (role == ctx.Guild.GetRole(690344137421357156) || role == ctx.Guild.GetRole(690680228489461779) || role == ctx.Guild.GetRole(690225863332986919)) isHigher = true;
+                if (role == ctx.Guild.GetRole(690344137421357156) || role == ctx.Guild.GetRole(690680228489461779) || role == ctx.Guild.GetRole(RoleIds["Masters of the discord"])) isHigher = true;
             }
 
             await connection.OpenAsync();
@@ -229,7 +247,7 @@ namespace CalveryApexBot
             Console.WriteLine(userRankScore);
             await ctx.RespondAsync($"What is your current rank score {ctx.User.Mention} ?");
 
-            var userResponse = await interactivity.WaitForMessageAsync(msg => msg.Content.Contains(userRankScore.ToString()));
+            var userResponse = await interactivity.WaitForMessageAsync(msg => msg.Content.Contains(userRankScore.ToString()), TimeSpan.FromMinutes(1));
             if (userResponse != null)
             {
                 if (!isHigher)
