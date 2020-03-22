@@ -172,7 +172,7 @@ namespace CalveryApexBot
                 };
             } else
             {
-                await ctx.RespondAsync("didn't work");
+                await ctx.RespondAsync($"Sorry {ctx.User.Mention},\n" + "you either took too long too react or didn't react with a valid emote !\n" + "Please try again and react within a minute of me responding 1");
             }
 
             var tcs = new TaskCompletionSource<string>();
