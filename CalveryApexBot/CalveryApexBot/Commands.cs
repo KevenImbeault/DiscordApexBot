@@ -1,21 +1,13 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Net.Http;
-using System.Net.Http.Headers;
-using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading;
 using System.Threading.Tasks;
-using DSharpPlus;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
-using DSharpPlus.CommandsNext.Converters;
 using DSharpPlus.Entities;
 using DSharpPlus.Interactivity;
 using Microsoft.Data.Sqlite;
 using Newtonsoft.Json.Linq;
 using RestSharp;
-using RestSharp.Authenticators;
 
 namespace CalveryApexBot
 {
@@ -161,7 +153,7 @@ namespace CalveryApexBot
             {
                 if (role == verifiedRole)
                 {
-                    await ctx.RespondAsync($"You have already been verified {ctx.User.Mention}!\n" + "Use the .rank command instead to update your current rank.");
+                    await ctx.RespondAsync($"You have already been verified {ctx.User.Mention}!\n" + "Use the !rank command instead to update your current rank.");
                     return;
                 }
 
