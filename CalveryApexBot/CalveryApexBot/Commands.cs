@@ -27,10 +27,11 @@ namespace CalveryApexBot
         [Command("rank")]
         public async Task Rank(CommandContext ctx)
         {
-            connection.Open();
+            await connection.OpenAsync();
 
             string platform, username;
 
+            //Get the username and platform for the command caller
             var command = connection.CreateCommand();
             command.CommandText =
                 @"
@@ -47,9 +48,6 @@ namespace CalveryApexBot
                 platform = reader.GetString(0);
                 username = reader.GetString(1);
             }
-
-                
-            
 
             var tcs = new TaskCompletionSource<string>();
 
@@ -122,7 +120,9 @@ namespace CalveryApexBot
                     break;
             }
 
-            connection.Close();
+            await ctx.RespondAsync($"{ctx.User.Mention} your rank has been updated !");
+
+            await connection.CloseAsync();
         }
 
         [Command("verifyme")]
@@ -229,7 +229,7 @@ namespace CalveryApexBot
                 await ctx.RespondAsync($"Perfect ! You are now verified {ctx.User.Mention}!");
             }
 
-            connection.Close();
+            await connection.CloseAsync();
         }
     }
 }
