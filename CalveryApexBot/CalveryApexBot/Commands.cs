@@ -20,13 +20,34 @@ using RestSharp.Authenticators;
 namespace CalveryApexBot
 {
     public class Commands
-    {
+    { 
+
         private RestClient client = new RestClient("https://public-api.tracker.gg/v2/apex/standard/profile/");
         private SqliteConnection connection = new SqliteConnection($"Data Source={Environment.GetEnvironmentVariable("SQLITE_DB", EnvironmentVariableTarget.User)}");
 
         [Command("rank")]
         public async Task Rank(CommandContext ctx)
         {
+            bool isVerified = false;
+            //Get Guild verified role
+            DiscordRole verifiedRole = ctx.Guild.GetRole(690570494348492841);
+            //Get member's roles
+            var callerRoles = ctx.Member.Roles;
+            //Verify if caller already has been verified
+            foreach (DiscordRole role in callerRoles)
+            {
+                if (role == verifiedRole)
+                {
+                    isVerified = true;
+                }
+            }
+
+            if(!isVerified)
+            {
+                await ctx.RespondAsync($"You are not verified {ctx.User.Mention} !\n" + "Use the !verifyme [apex username] command to get verified !");
+                return;
+            }
+
             await connection.OpenAsync();
 
             string platform, username;
