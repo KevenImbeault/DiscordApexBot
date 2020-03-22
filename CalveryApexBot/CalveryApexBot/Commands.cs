@@ -11,6 +11,7 @@ using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.CommandsNext.Converters;
 using DSharpPlus.Entities;
 using DSharpPlus.Interactivity;
+using Microsoft.Data.Sqlite;
 using Newtonsoft.Json.Linq;
 using RestSharp;
 using RestSharp.Authenticators;
@@ -20,6 +21,17 @@ namespace CalveryApexBot
     public class Commands
     {
         private RestClient client = new RestClient("https://public-api.tracker.gg/v2/apex/standard/profile/");
+        private SqliteConnection connection = new SqliteConnection("Data Source=C:/Users/Keven/Desktop/CalveryApexBot/bot.db");
+        
+        [Command("rank")]
+        public async Task Rank(CommandContext ctx)
+        {
+            connection.Open();
+
+
+
+            connection.Close();
+        }
 
         [Command("verifyme")]
         public async Task Verify(CommandContext ctx, String username)
@@ -37,6 +49,8 @@ namespace CalveryApexBot
                     return;
                 }
             }
+
+            await connection.OpenAsync();
 
             string platform = "";
             var interactivity = ctx.Client.GetInteractivityModule();
@@ -100,16 +114,30 @@ namespace CalveryApexBot
             //Get the user rank score from the data received
             var userRankScore = userData["data"]["segments"][0]["stats"]["rankScore"]["value"];
             Console.WriteLine(userRankScore);
-
-            await ctx.RespondAsync("What is your current rank score ?");
+            await ctx.RespondAsync($"What is your current rank score {ctx.User.Mention} ?");
 
             var userResponse = await interactivity.WaitForMessageAsync(msg => msg.Content.Contains(userRankScore.ToString()));
 
-            if(userResponse != null)
+            var command = connection.CreateCommand();
+            command.CommandText =
+                @"
+                    INSERT INTO users (discord_userId, apex_platform, apex_username, apex_rank) 
+                    VALUES ($discord_userId, $apex_platform, $apex_username, $apex_rank); 
+                 ";
+            command.Parameters.AddWithValue("$discord_userId", ctx.Member.Id);
+            command.Parameters.AddWithValue("$apex_platform", platform);
+            command.Parameters.AddWithValue("$apex_username", username);
+            command.Parameters.AddWithValue("$apex_rank", "");
+
+            await command.ExecuteNonQueryAsync();
+
+            if (userResponse != null)
             {
                 await ctx.Member.GrantRoleAsync(ctx.Guild.GetRole(690570494348492841));
-                await ctx.RespondAsync("Perfect ! You are now verified !");
+                await ctx.RespondAsync($"Perfect ! You are now verified {ctx.User.Mention}!");
             }
+
+            connection.Close();
         }
     }
 }
