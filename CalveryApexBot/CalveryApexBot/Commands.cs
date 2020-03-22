@@ -162,12 +162,15 @@ namespace CalveryApexBot
                 {
                     case "🧡":
                         platform = "origin";
+                        await ctx.Member.GrantRoleAsync(ctx.Guild.GetRole(690324115797573663));
                         break;
                     case "💚":
                         platform = "xbl";
+                        await ctx.Member.GrantRoleAsync(ctx.Guild.GetRole(690324076358795303));
                         break;
                     case "💙":
                         platform = "psn";
+                        await ctx.Member.GrantRoleAsync(ctx.Guild.GetRole(690324156885237833));
                         break;
                 };
             } else
