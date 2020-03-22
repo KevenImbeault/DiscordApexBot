@@ -40,7 +40,7 @@ namespace CalveryApexBot
                 await msg.CreateReactionAsync(emojis[i]);
                 //Makes thread sleep to not hit limit of 
                 //Discord's API of 2 actions per second
-                Thread.Sleep(500);
+                Thread.Sleep(100);
             }
 
             //Waits for a reaction on the sent message and, when getting one, verifies the emoji is part of the emojis array
