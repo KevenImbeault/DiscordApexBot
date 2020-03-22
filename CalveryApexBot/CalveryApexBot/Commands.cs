@@ -20,11 +20,24 @@ namespace CalveryApexBot
     public class Commands
     {
         private RestClient client = new RestClient("https://public-api.tracker.gg/v2/apex/standard/profile/");
-        
 
         [Command("verifyme")]
         public async Task Verify(CommandContext ctx, String username)
         {
+            //Get Guild verified role
+            DiscordRole verifiedRole = ctx.Guild.GetRole(690570494348492841);
+            //Get member's roles
+            var callerRoles = ctx.Member.Roles;
+            //Verify if caller already has been verified
+            foreach (DiscordRole role in callerRoles)
+            {
+                if (role == verifiedRole)
+                {
+                    await ctx.RespondAsync($"You have already been verified {ctx.User.Mention}!\n" + "Use the .rank command instead to update your current rank.");
+                    return;
+                }
+            }
+
             string platform = "";
             var interactivity = ctx.Client.GetInteractivityModule();
             //Create array of the three used emojis for selecting platforms
@@ -94,7 +107,7 @@ namespace CalveryApexBot
 
             if(userResponse != null)
             {
-                await ctx.Guild.GrantRoleAsync(ctx.Member, ctx.Guild.GetRole(690570494348492841));
+                await ctx.Member.GrantRoleAsync(ctx.Guild.GetRole(690570494348492841));
                 await ctx.RespondAsync("Perfect ! You are now verified !");
             }
         }
