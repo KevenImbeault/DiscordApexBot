@@ -22,8 +22,8 @@ namespace CalveryApexBot
     public class Commands
     {
         private RestClient client = new RestClient("https://public-api.tracker.gg/v2/apex/standard/profile/");
-        private SqliteConnection connection = new SqliteConnection($"Data Source={Environment.GetEnvironmentVariable("SQLITE_DB", EnvironmentVariableTarget.Machine)}");
-        
+        private SqliteConnection connection = new SqliteConnection($"Data Source={Environment.GetEnvironmentVariable("SQLITE_DB", EnvironmentVariableTarget.User)}");
+
         [Command("rank")]
         public async Task Rank(CommandContext ctx)
         {
@@ -84,7 +84,7 @@ namespace CalveryApexBot
             userRank = userRank.Trim().ToUpper();
 
             var updateCommand = connection.CreateCommand();
-            updateCommand.CommandText = 
+            updateCommand.CommandText =
                 @"
                     UPDATE users
                     SET apex_rank = $apex_rank
@@ -94,7 +94,8 @@ namespace CalveryApexBot
             updateCommand.Parameters.AddWithValue("$discord_userId", ctx.User.Id);
 
             await updateCommand.ExecuteNonQueryAsync();
-            
+
+
             switch (userRank)
             {
                 case "BRONZE":
@@ -128,6 +129,8 @@ namespace CalveryApexBot
         [Command("verifyme")]
         public async Task Verify(CommandContext ctx, String username)
         {
+
+            bool isHigher = false;
             //Get Guild verified role
             DiscordRole verifiedRole = ctx.Guild.GetRole(690570494348492841);
             //Get member's roles
@@ -140,6 +143,8 @@ namespace CalveryApexBot
                     await ctx.RespondAsync($"You have already been verified {ctx.User.Mention}!\n" + "Use the .rank command instead to update your current rank.");
                     return;
                 }
+
+                if (role == ctx.Guild.GetRole(690344137421357156) || role == ctx.Guild.GetRole(690680228489461779) || role == ctx.Guild.GetRole(690225863332986919)) isHigher = true;
             }
 
             await connection.OpenAsync();
@@ -147,18 +152,18 @@ namespace CalveryApexBot
             string platform = "";
             var interactivity = ctx.Client.GetInteractivityModule();
             //Create array of the three used emojis for selecting platforms
-            DiscordEmoji[] emojis = { DiscordEmoji.FromUnicode("🧡"), DiscordEmoji.FromUnicode("💚"), DiscordEmoji.FromUnicode("💙")};
+            DiscordEmoji[] emojis = { DiscordEmoji.FromUnicode("🧡"), DiscordEmoji.FromUnicode("💚"), DiscordEmoji.FromUnicode("💙") };
 
             var msg = await ctx.RespondAsync($"Hey, {ctx.User.Mention}!\n" +
                 "What platform do you play on ?\n\n" +
                 ":orange_heart: - Origin  :green_heart: - Xbox  :blue_heart: - Playstation");
 
             //Waits for a reaction on the sent message and, when getting one, verifies the emoji is part of the emojis array
-            var userReaction = await interactivity.WaitForReactionAsync(xe => Array.Exists(emojis, x => x == xe), ctx.User, TimeSpan.FromMinutes(1));          
-            
-            if(userReaction != null)
+            var userReaction = await interactivity.WaitForReactionAsync(xe => Array.Exists(emojis, x => x == xe), ctx.User, TimeSpan.FromMinutes(1));
+
+            if (userReaction != null)
             {
-                switch(userReaction.Emoji.Name)
+                switch (userReaction.Emoji.Name)
                 {
                     case "🧡":
                         platform = "origin";
@@ -170,9 +175,11 @@ namespace CalveryApexBot
                         platform = "psn";
                         break;
                 };
-            } else
+            }
+            else
             {
                 await ctx.RespondAsync($"Sorry {ctx.User.Mention},\n" + "you either took too long too react or didn't react with a valid emote !\n" + "Please try again and react within a minute of me responding 1");
+                return;
             }
 
             var tcs = new TaskCompletionSource<string>();
@@ -196,13 +203,14 @@ namespace CalveryApexBot
                     }
 
                 });
-            } catch(Exception ex)
+            }
+            catch (Exception ex)
             {
                 tcs.SetException(ex);
             }
 
             //Transform data ranceived into better formated JSON object
-            var userData = JObject.Parse(await tcs.Task); 
+            var userData = JObject.Parse(await tcs.Task);
             //Get the user rank score from the data received
             var userRankScore = userData["data"]["segments"][0]["stats"]["rankScore"]["value"];
             Console.WriteLine(userRankScore);
@@ -211,9 +219,10 @@ namespace CalveryApexBot
             var userResponse = await interactivity.WaitForMessageAsync(msg => msg.Content.Contains(userRankScore.ToString()));
             if (userResponse != null)
             {
-                await ctx.Member.ModifyAsync(nickname : username, reason : "Changed to reflect Apex Legends username");
+                if (!isHigher)
+                    await ctx.Member.ModifyAsync(nickname: username, reason: "Changed to reflect Apex Legends username");
 
-                switch(platform)
+                switch (platform)
                 {
                     case "origin":
                         await ctx.Member.GrantRoleAsync(ctx.Guild.GetRole(690324115797573663));
@@ -225,26 +234,27 @@ namespace CalveryApexBot
                         await ctx.Member.GrantRoleAsync(ctx.Guild.GetRole(690324156885237833));
                         break;
                 }
+                await ctx.Member.GrantRoleAsync(ctx.Guild.GetRole(690570494348492841));
+                await ctx.RespondAsync($"Perfect ! You are now verified {ctx.User.Mention}!");
+            }
+            else
+            {
+                await ctx.RespondAsync($"The rank score you entered was not correct {ctx.User.Mention} !\n" + "Please try the command again.");
+                return;
+            }
 
-                var command = connection.CreateCommand();
-                command.CommandText =
-                    @"
+            var command = connection.CreateCommand();
+            command.CommandText =
+                @"
                     INSERT INTO users (discord_userId, apex_platform, apex_username, apex_rank) 
                     VALUES ($discord_userId, $apex_platform, $apex_username, $apex_rank); 
                  ";
-                command.Parameters.AddWithValue("$discord_userId", ctx.Member.Id);
-                command.Parameters.AddWithValue("$apex_platform", platform);
-                command.Parameters.AddWithValue("$apex_username", username);
-                command.Parameters.AddWithValue("$apex_rank", "");
+            command.Parameters.AddWithValue("$discord_userId", ctx.Member.Id);
+            command.Parameters.AddWithValue("$apex_platform", platform);
+            command.Parameters.AddWithValue("$apex_username", username);
+            command.Parameters.AddWithValue("$apex_rank", "");
 
-                await command.ExecuteNonQueryAsync();
-
-                await ctx.Member.GrantRoleAsync(ctx.Guild.GetRole(690570494348492841));
-                await ctx.RespondAsync($"Perfect ! You are now verified {ctx.User.Mention}!");
-            } else
-            {
-                await ctx.RespondAsync($"The rank score you entered was not correct {ctx.User.Mention} !\n" + "Please try the command again.");
-            }
+            await command.ExecuteNonQueryAsync();
 
             await connection.CloseAsync();
         }
