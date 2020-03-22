@@ -30,7 +30,7 @@ namespace CalveryApexBot
 
             commands = discord.UseCommandsNext(new CommandsNextConfiguration
             {
-                StringPrefix = "."
+                StringPrefix = "!"
             });;
 
             commands.RegisterCommands<Commands>();
