@@ -43,15 +43,12 @@ namespace CalveryApexBot
                 {
                     case "🧡":
                         platform = "origin";
-                        await ctx.RespondAsync($"Origin {username}");
                         break;
                     case "💚":
                         platform = "xbl";
-                        await ctx.RespondAsync($"Xbox {username}");
                         break;
                     case "💙":
                         platform = "psn";
-                        await ctx.RespondAsync($"Playstation {username}");
                         break;
                 };
             } else
