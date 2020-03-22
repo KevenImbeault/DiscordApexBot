@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using DSharpPlus;
@@ -28,7 +29,98 @@ namespace CalveryApexBot
         {
             connection.Open();
 
+            string platform, username;
 
+            var command = connection.CreateCommand();
+            command.CommandText =
+                @"
+                    SELECT apex_platform, apex_username
+                    FROM users
+                    WHERE discord_userId = $id
+                 ";
+            command.Parameters.AddWithValue("$id", ctx.User.Id);
+
+            using (var reader = await command.ExecuteReaderAsync())
+            {
+                await reader.ReadAsync();
+
+                platform = reader.GetString(0);
+                username = reader.GetString(1);
+            }
+
+                
+            
+
+            var tcs = new TaskCompletionSource<string>();
+
+            try
+            {
+                //Creates request to execute later
+                RestRequest request = new RestRequest($"{platform}/{username}", Method.GET);
+                request.AddHeader("TRN-Api-Key", Environment.GetEnvironmentVariable("TRN-Api-Key"));
+                request.RequestFormat = DataFormat.Json;
+
+                client.GetAsync(request, (response, handle) =>
+                {
+                    if ((int)response.StatusCode >= 400)
+                    {
+                        tcs.SetException(new Exception(response.StatusDescription));
+                    }
+                    else
+                    {
+                        tcs.SetResult(response.Content);
+                    }
+
+                });
+            }
+            catch (Exception ex)
+            {
+                tcs.SetException(ex);
+            }
+
+            //Transform data ranceived into better formated JSON object
+            var userData = JObject.Parse(await tcs.Task);
+            //Get the user rank score from the data received
+            var userRank = userData["data"]["segments"][0]["stats"]["rankScore"]["metadata"]["rankName"].ToString();
+            userRank = Regex.Replace(userRank, "[0-9]", "");
+            userRank = userRank.Trim().ToUpper();
+
+            var updateCommand = connection.CreateCommand();
+            updateCommand.CommandText = 
+                @"
+                    UPDATE users
+                    SET apex_rank = $apex_rank
+                    WHERE discord_userId = $discord_userId
+                 ";
+            updateCommand.Parameters.AddWithValue("$apex_rank", userRank);
+            updateCommand.Parameters.AddWithValue("$discord_userId", ctx.User.Id);
+
+            await updateCommand.ExecuteNonQueryAsync();
+            
+            switch (userRank)
+            {
+                case "BRONZE":
+                    await ctx.Member.GrantRoleAsync(ctx.Guild.GetRole(690322821078974504));
+                    break;
+                case "SILVER":
+                    await ctx.Member.GrantRoleAsync(ctx.Guild.GetRole(690322860371476561));
+                    break;
+                case "GOLD":
+                    await ctx.Member.GrantRoleAsync(ctx.Guild.GetRole(690322910920966305));
+                    break;
+                case "PLATINUM":
+                    await ctx.Member.GrantRoleAsync(ctx.Guild.GetRole(690232097452982402));
+                    break;
+                case "DIAMOND":
+                    await ctx.Member.GrantRoleAsync(ctx.Guild.GetRole(690322950188171344));
+                    break;
+                case "MASTER":
+                    await ctx.Member.GrantRoleAsync(ctx.Guild.GetRole(690323080437956609));
+                    break;
+                default:
+                    await ctx.Member.GrantRoleAsync(ctx.Guild.GetRole(690323104630964254));
+                    break;
+            }
 
             connection.Close();
         }
