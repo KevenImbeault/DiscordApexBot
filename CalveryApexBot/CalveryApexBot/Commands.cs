@@ -22,7 +22,7 @@ namespace CalveryApexBot
     public class Commands
     {
         private RestClient client = new RestClient("https://public-api.tracker.gg/v2/apex/standard/profile/");
-        private SqliteConnection connection = new SqliteConnection("Data Source=C:/Users/Keven/Desktop/CalveryApexBot/bot.db");
+        private SqliteConnection connection = new SqliteConnection($"Data Source={Environment.GetEnvironmentVariable("SQLITE_DB", EnvironmentVariableTarget.Machine)}");
         
         [Command("rank")]
         public async Task Rank(CommandContext ctx)
