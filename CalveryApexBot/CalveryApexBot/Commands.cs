@@ -162,15 +162,12 @@ namespace CalveryApexBot
                 {
                     case "🧡":
                         platform = "origin";
-                        await ctx.Member.GrantRoleAsync(ctx.Guild.GetRole(690324115797573663));
                         break;
                     case "💚":
                         platform = "xbl";
-                        await ctx.Member.GrantRoleAsync(ctx.Guild.GetRole(690324076358795303));
                         break;
                     case "💙":
                         platform = "psn";
-                        await ctx.Member.GrantRoleAsync(ctx.Guild.GetRole(690324156885237833));
                         break;
                 };
             } else
@@ -214,6 +211,21 @@ namespace CalveryApexBot
             var userResponse = await interactivity.WaitForMessageAsync(msg => msg.Content.Contains(userRankScore.ToString()));
             if (userResponse != null)
             {
+                await ctx.Member.ModifyAsync(nickname : username, reason : "Changed to reflect Apex Legends username");
+
+                switch(platform)
+                {
+                    case "origin":
+                        await ctx.Member.GrantRoleAsync(ctx.Guild.GetRole(690324115797573663));
+                        break;
+                    case "xbl":
+                        await ctx.Member.GrantRoleAsync(ctx.Guild.GetRole(690324076358795303));
+                        break;
+                    case "psn":
+                        await ctx.Member.GrantRoleAsync(ctx.Guild.GetRole(690324156885237833));
+                        break;
+                }
+
                 var command = connection.CreateCommand();
                 command.CommandText =
                     @"
