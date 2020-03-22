@@ -34,15 +34,6 @@ namespace CalveryApexBot
                 "What platform do you play on ?\n\n" +
                 ":orange_heart: - Origin  :green_heart: - Xbox  :blue_heart: - Playstation");
 
-            for (var i = 0; i < emojis.Length; ++i)
-            {
-                //Adds each emoji as reactions to previously sent message
-                await msg.CreateReactionAsync(emojis[i]);
-                //Makes thread sleep to not hit limit of 
-                //Discord's API of 2 actions per second
-                Thread.Sleep(100);
-            }
-
             //Waits for a reaction on the sent message and, when getting one, verifies the emoji is part of the emojis array
             var userReaction = await interactivity.WaitForReactionAsync(xe => Array.Exists(emojis, x => x == xe), ctx.User, TimeSpan.FromMinutes(1));          
             
