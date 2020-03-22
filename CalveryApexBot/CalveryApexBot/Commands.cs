@@ -98,8 +98,17 @@ namespace CalveryApexBot
             var userData = JObject.Parse(await tcs.Task); 
             //Get the user rank score from the data received
             var userRankScore = userData["data"]["segments"][0]["stats"]["rankScore"]["value"];
+            Console.WriteLine(userRankScore);
 
             await ctx.RespondAsync("What is your current rank score ?");
+
+            var userResponse = await interactivity.WaitForMessageAsync(msg => msg.Content.Contains(userRankScore.ToString()));
+
+            if(userResponse != null)
+            {
+                await ctx.Guild.GrantRoleAsync(ctx.Member, ctx.Guild.GetRole(690570494348492841));
+                await ctx.RespondAsync("Perfect ! You are now verified !");
+            }
         }
     }
 }
