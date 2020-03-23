@@ -16,7 +16,7 @@ namespace CalveryApexBot
     { 
 
         private RestClient client = new RestClient("https://public-api.tracker.gg/v2/apex/standard/profile/");
-        private SqliteConnection connection = new SqliteConnection($"Data Source={Environment.GetEnvironmentVariable("SQLITE_DB", EnvironmentVariableTarget.User)}");
+        private SqliteConnection connection = new SqliteConnection($"Data Source={Environment.GetEnvironmentVariable("SQLITE_DB")}");
         private Dictionary<string, ulong> RoleIds = new Dictionary<string, ulong>()
         {
             {"Masters of the discord", 690225863332986919},
@@ -86,7 +86,7 @@ namespace CalveryApexBot
             {
                 //Creates request to execute later
                 RestRequest request = new RestRequest($"{platform}/{username}", Method.GET);
-                request.AddHeader("TRN-Api-Key", Environment.GetEnvironmentVariable("TRN-Api-Key"));
+                request.AddHeader("TRN-Api-Key", Environment.GetEnvironmentVariable("TRN_API_KEY"));
                 request.RequestFormat = DataFormat.Json;
 
                 client.GetAsync(request, (response, handle) =>
@@ -219,7 +219,7 @@ namespace CalveryApexBot
             {
                 //Creates request to execute later
                 RestRequest request = new RestRequest($"{platform}/{username}", Method.GET);
-                request.AddHeader("TRN-Api-Key", Environment.GetEnvironmentVariable("TRN-Api-Key"));
+                request.AddHeader("TRN-Api-Key", Environment.GetEnvironmentVariable("TRN_API_KEY"));
                 request.RequestFormat = DataFormat.Json;
 
                 client.GetAsync(request, (response, handle) =>

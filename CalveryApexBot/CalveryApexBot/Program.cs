@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using DSharpPlus;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.Interactivity;
+using DSharpPlus.Net.WebSocket;
 
 namespace CalveryApexBot
 {
@@ -22,11 +23,13 @@ namespace CalveryApexBot
             discord = new DiscordClient(new DiscordConfiguration
             {
                 //Searches the Windows Environement Variables for the token
-                Token = Environment.GetEnvironmentVariable("token", EnvironmentVariableTarget.Machine),
+                Token = Environment.GetEnvironmentVariable("TOKEN"),
                 TokenType = TokenType.Bot,
                 UseInternalLogHandler = true,
                 LogLevel = LogLevel.Debug
             });
+
+            discord.SetWebSocketClient<WebSocket4NetCoreClient>();
 
             commands = discord.UseCommandsNext(new CommandsNextConfiguration
             {
