@@ -9,7 +9,8 @@ using Microsoft.Data.Sqlite;
 using Newtonsoft.Json.Linq;
 using RestSharp;
 using System.Collections.Generic;
-
+using System.Threading;
+using DSharpPlus.EventArgs;
 
 namespace DiscordApexBot
 {
@@ -34,6 +35,178 @@ namespace DiscordApexBot
                 {"Playstation", 690324156885237833},
                 {"Origin", 690324115797573663}
             };
+
+        [Command("watch")]
+        public async Task Watch(CommandContext ctx, ulong channelId, ulong messageId)
+        {
+            var interactivity = ctx.Client.GetInteractivityModule();
+            var message = await ctx.Guild.GetChannel(channelId).GetMessageAsync(messageId);
+            DiscordEmoji[] options = { DiscordEmoji.FromUnicode("🧡"), DiscordEmoji.FromUnicode("💚"), DiscordEmoji.FromUnicode("💙") };
+
+
+            if (message != null)
+            {
+                await connection.OpenAsync();
+
+                //TODO Check why bot doesn't always add all emotes
+                //bool done = false;
+                //List<DiscordEmoji> optionsList = new List<DiscordEmoji>();
+                //await ctx.RespondAsync($"Hey {ctx.User.Mention} !\n");
+                //while(!done)
+                //{
+                //    var msg = await interactivity.WaitForMessageAsync(x => x.Content != null );
+                //    if(msg != null)
+                //    {
+                //        if(msg.Message.Content.Contains("done"))
+                //        {
+                //            done = true;
+                //        } else
+                //        {
+                //            optionsList.Add(DiscordEmoji.FromUnicode(msg.Message.Content));
+                //            await msg.Message.CreateReactionAsync(DiscordEmoji.FromName(ctx.Client, ":white_check_mark:"));
+                //        }
+                        
+                //    }
+                //}
+
+                //DiscordEmoji[] options = optionsList.ToArray();
+
+                //for(var i = 0; i < options.Length; ++i)
+                //{
+                //    await message.CreateReactionAsync(options[i]);
+                //}
+
+                while (true)
+                {
+                    var reactionContext = await interactivity.WaitForMessageReactionAsync(xe => Array.Exists(options, x => x == xe), message);
+                    string platform = "", username;
+
+                    bool isHigher = false;
+                    //Get Guild verified role
+                    DiscordRole verifiedRole = ctx.Guild.GetRole(690570494348492841);
+                    //Get member's roles
+                    var callerRoles = ctx.Member.Roles;
+                    //Verify if caller already has been verified
+                    foreach (DiscordRole role in callerRoles)
+                    {
+                        if (role == verifiedRole)
+                        {
+                            await ctx.RespondAsync($"You have already been verified {ctx.User.Mention}!\n" + "Use the !rank command instead to update your current rank.");
+                            return;
+                        }
+
+                        if (role == ctx.Guild.GetRole(690344137421357156) || role == ctx.Guild.GetRole(690680228489461779) || role == ctx.Guild.GetRole(RoleIds["Masters of the discord"])) isHigher = true;
+                    }
+
+                    if (reactionContext != null)
+                    {
+                        switch (reactionContext.Emoji.Name)
+                        {
+                            case "🧡":
+                                platform = "origin";
+                                break;
+                            case "💚":
+                                platform = "xbl";
+                                break;
+                            case "💙":
+                                platform = "psn";
+                                break;
+                        };
+
+                        var member = await ctx.Guild.GetMemberAsync(reactionContext.User.Id);
+
+                        var dmMessage = await member.SendMessageAsync("Hey !\n" + "What is your username ?");
+
+                        var usernameMessage = await interactivity.WaitForMessageAsync(x => true);
+
+                        username = usernameMessage.Message.Content.Trim();
+
+                        Console.WriteLine($"{platform} - {username}");
+
+                        var tcs = new TaskCompletionSource<string>();
+
+                        try
+                        {
+                            //Creates request to execute later
+                            RestRequest request = new RestRequest($"{platform}/{username}", Method.GET);
+                            request.AddHeader("TRN-Api-Key", Environment.GetEnvironmentVariable("TRN_API_KEY", EnvironmentVariableTarget.User));
+                            request.RequestFormat = DataFormat.Json;
+
+                            client.GetAsync(request, (response, handle) =>
+                            {
+                                if ((int)response.StatusCode >= 400)
+                                {
+                                    tcs.SetException(new Exception(response.StatusDescription));
+                                }
+                                else
+                                {
+                                    tcs.SetResult(response.Content);
+                                }
+
+                            });
+                        }
+                        catch (Exception ex)
+                        {
+                            tcs.SetException(ex);
+                        }
+
+                        //Transform data ranceived into better formated JSON object
+                        var userData = JObject.Parse(await tcs.Task);
+                        //Get the user rank score from the data received
+                        var userRankScore = userData["data"]["segments"][0]["stats"]["rankScore"]["value"];
+                        Console.WriteLine(userRankScore);
+                        await dmMessage.RespondAsync($"What is your current rank score ?");
+
+                        var userResponse = await interactivity.WaitForMessageAsync(x => x.Content.Contains(userRankScore.ToString()), TimeSpan.FromMinutes(1));
+                        if (userResponse != null)
+                        {
+                            if (!isHigher)
+                                await ctx.Member.ModifyAsync(nickname: username, reason: "Changed to reflect Apex Legends username");
+
+                            switch (platform)
+                            {
+                                case "origin":
+                                    await ctx.Member.GrantRoleAsync(ctx.Guild.GetRole(690324115797573663));
+                                    break;
+                                case "xbl":
+                                    await ctx.Member.GrantRoleAsync(ctx.Guild.GetRole(690324076358795303));
+                                    break;
+                                case "psn":
+                                    await ctx.Member.GrantRoleAsync(ctx.Guild.GetRole(690324156885237833));
+                                    break;
+                            }
+                            await ctx.Member.GrantRoleAsync(ctx.Guild.GetRole(690570494348492841));
+                            await dmMessage.RespondAsync($"Perfect ! You are now verified !");
+                        }
+                        else
+                        {
+                            await ctx.RespondAsync($"The rank score you entered was not correct !\n" + "Please try the command again.");
+                            return;
+                        }
+
+                        var command = connection.CreateCommand();
+                        command.CommandText =
+                            @"
+                                INSERT INTO users (discord_userId, apex_platform, apex_username, apex_rank) 
+                                VALUES ($discord_userId, $apex_platform, $apex_username, $apex_rank); 
+                             ";
+                        command.Parameters.AddWithValue("$discord_userId", ctx.Member.Id);
+                        command.Parameters.AddWithValue("$apex_platform", platform);
+                        command.Parameters.AddWithValue("$apex_username", username);
+                        command.Parameters.AddWithValue("$apex_rank", "");
+
+                        await command.ExecuteNonQueryAsync();
+
+                    }
+
+                    Thread.Sleep(100);
+                }
+            }
+            else
+            {
+                await ctx.RespondAsync("Didn't work");
+            }
+        }
 
         [Command("rank")]
         public async Task Rank(CommandContext ctx)
@@ -178,7 +351,7 @@ namespace DiscordApexBot
                 if (role == ctx.Guild.GetRole(690344137421357156) || role == ctx.Guild.GetRole(690680228489461779) || role == ctx.Guild.GetRole(RoleIds["Masters of the discord"])) isHigher = true;
             }
 
-            await connection.OpenAsync();
+            
 
             string platform = "";
             var interactivity = ctx.Client.GetInteractivityModule();
