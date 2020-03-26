@@ -47,7 +47,7 @@ namespace DiscordApexBot
             if (message != null)
             {
                 await connection.OpenAsync();
-
+                await ctx.RespondAsync($"Yes sir, {ctx.User.Mention}. I'm engaging full time watch on this message.");
                 //TODO Check why bot doesn't always add all emotes
                 //bool done = false;
                 //List<DiscordEmoji> optionsList = new List<DiscordEmoji>();
@@ -65,7 +65,7 @@ namespace DiscordApexBot
                 //            optionsList.Add(DiscordEmoji.FromUnicode(msg.Message.Content));
                 //            await msg.Message.CreateReactionAsync(DiscordEmoji.FromName(ctx.Client, ":white_check_mark:"));
                 //        }
-                        
+
                 //    }
                 //}
 
