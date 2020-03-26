@@ -227,7 +227,7 @@ namespace DiscordApexBot
 
             if (!isVerified)
             {
-                await ctx.RespondAsync($"You are not verified {ctx.User.Mention} !\n" + "Use the !verifyme [apex username] command to get verified !");
+                await ctx.RespondAsync($"You are not verified {ctx.User.Mention} !\n" + "Use the pinned message from Calvery and react to it with the appropriate emote. Once done I'll send you a DM. Don't worry, it won't hurt!");
                 return;
             }
 
